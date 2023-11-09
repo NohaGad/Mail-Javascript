@@ -5,16 +5,15 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
   document.querySelector('#compose').addEventListener('click', compose_email);
-  document.querySelector('#compose-form').addEventListener('submit', (event) => {
-
+  document.querySelector('#compose-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
     const recipients = document.querySelector('#compose-recipients').value
     const subject = document.querySelector('#compose-subject').value
     const body = document.querySelector('#compose-body').value
 
-    send_email(recipients, subject, body);
-    alert("noha")
+    await send_email(recipients, subject, body);
+
     load_mailbox('sent');
-    event.preventDefault();
 
   })
 
@@ -22,9 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
   load_mailbox('inbox');
 });
 
-function send_email(recipients, subject, body) {
+async function send_email(recipients, subject, body) {
 
-  fetch('/emails', {
+  await fetch('/emails', {
     method: 'POST',
     body: JSON.stringify({
       recipients: recipients,
@@ -32,13 +31,6 @@ function send_email(recipients, subject, body) {
       body: body
     })
   })
-    .then(response => response.json())
-    .then(result => {
-      // Print result
-      console.log(result);
-
-    });
-
 }
 
 function compose_email() {
@@ -53,7 +45,42 @@ function compose_email() {
   document.querySelector('#compose-body').value = '';
 }
 
-function load_mailbox(mailbox) {
+async function get_emails(mailbox_type) {
+
+  const response = await fetch(`/emails/${mailbox_type}`)
+  const emails = await response.json()
+  return emails
+}
+
+function render_emails(emails) {
+  const emails_view = document.querySelector('#emails-view')
+  emails.forEach(email => {
+    let emailDiv = document.createElement('div')
+    emailDiv.className = 'emaildiv list-group-item'
+    if (email.read === true) {
+      emailDiv.className += ' readEmail'
+    }
+
+    const senderDiv = document.createElement('div');
+    senderDiv.className = 'sender';
+    senderDiv.textContent = email.sender;
+
+    const subjectDiv = document.createElement('div');
+    subjectDiv.className = 'subject';
+    subjectDiv.textContent = email.subject;
+
+    const timestampDiv = document.createElement('div');
+    timestampDiv.className = 'timestamp';
+    timestampDiv.textContent = `Sent at: ${email.timestamp}`;
+
+    emailDiv.appendChild(senderDiv);
+    emailDiv.appendChild(subjectDiv);
+    emailDiv.appendChild(timestampDiv);
+
+    emails_view.appendChild(emailDiv)
+  })
+}
+async function load_mailbox(mailbox) {
 
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
@@ -61,4 +88,9 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+
+
+  const emails = await get_emails(mailbox)
+  console.log(emails)
+  render_emails(emails);
 }
