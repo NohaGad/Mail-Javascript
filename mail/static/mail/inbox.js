@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
     load_mailbox('sent');
 
   })
-
   // By default, load the inbox
   load_mailbox('inbox');
 });
@@ -38,6 +37,8 @@ function compose_email() {
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
+  document.querySelector('#email-view-by-id').style.display = 'none';
+
 
   // Clear out composition fields
   document.querySelector('#compose-recipients').value = '';
@@ -62,22 +63,24 @@ function render_emails(emails) {
     }
 
     const senderDiv = document.createElement('div');
-    senderDiv.className = 'sender';
+    senderDiv.className = 'senderdiv';
     senderDiv.textContent = email.sender;
 
     const subjectDiv = document.createElement('div');
-    subjectDiv.className = 'subject';
+    subjectDiv.className = 'subjectdiv';
     subjectDiv.textContent = email.subject;
 
     const timestampDiv = document.createElement('div');
-    timestampDiv.className = 'timestamp';
+    timestampDiv.className = 'timestampdiv';
     timestampDiv.textContent = `Sent at: ${email.timestamp}`;
 
     emailDiv.appendChild(senderDiv);
     emailDiv.appendChild(subjectDiv);
     emailDiv.appendChild(timestampDiv);
 
-    emails_view.appendChild(emailDiv)
+    emails_view.appendChild(emailDiv);
+    emailDiv.addEventListener('click', () => load_email_id(email.id))
+
   })
 }
 async function load_mailbox(mailbox) {
@@ -85,12 +88,77 @@ async function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#email-view-by-id').style.display = 'none';
+
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
 
   const emails = await get_emails(mailbox)
-  console.log(emails)
+  // console.log(emails)
   render_emails(emails);
+}
+
+async function get_email_id(id) {
+  const response = await fetch(`/emails/${id}`)
+  const email = await response.json()
+  return email
+}
+function mark_read(id) {
+  fetch(`/emails/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      read: true
+    })
+  })
+}
+function render_email_id(email) {
+  const email_view = document.querySelector('#email-view-by-id')
+  email_view.innerHTML = ''
+  const emailinfo = document.createElement('div')
+  emailinfo.className = 'email-info'
+
+  const sender = document.createElement('h4');
+  sender.className = 'sender';
+  sender.textContent = `From: ${email.sender}`;
+
+  const recipients = document.createElement('h4');
+  recipients.className = 'recipients';
+  recipients.textContent = `To: ${email.recipients}`;
+
+  const subject = document.createElement('h4');
+  subject.className = 'subject';
+  subject.textContent = `Subject: ${email.subject}`;
+
+  const timestamp = document.createElement('h4');
+  timestamp.className = 'timestamp';
+  timestamp.textContent = `At : ${email.timestamp}`;
+
+  emailinfo.appendChild(sender);
+  emailinfo.appendChild(recipients);
+  emailinfo.appendChild(subject);
+  emailinfo.appendChild(timestamp);
+  email_view.appendChild(emailinfo);
+
+
+  email_view.appendChild(document.createElement('hr'));
+
+  const email_body = document.createElement('div');
+  email_body.className = 'email-body'
+  email_body.textContent = email.body;
+
+  email_view.appendChild(email_body);
+
+}
+async function load_email_id(id) {
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#email-view-by-id').style.display = 'block';
+
+  const email = await get_email_id(id)
+  console.log(email)
+  render_email_id(email)
+  mark_read(id)
+
 }
