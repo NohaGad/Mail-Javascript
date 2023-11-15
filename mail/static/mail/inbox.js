@@ -39,7 +39,6 @@ function compose_email() {
   document.querySelector('#compose-view').style.display = 'block';
   document.querySelector('#email-view-by-id').style.display = 'none';
 
-
   // Clear out composition fields
   document.querySelector('#compose-recipients').value = '';
   document.querySelector('#compose-subject').value = '';
@@ -53,7 +52,7 @@ async function get_emails(mailbox_type) {
   return emails
 }
 
-function render_emails(emails) {
+function render_emails(emails, mailbox) {
   const emails_view = document.querySelector('#emails-view')
   emails.forEach(email => {
     let emailDiv = document.createElement('div')
@@ -79,7 +78,7 @@ function render_emails(emails) {
     emailDiv.appendChild(timestampDiv);
 
     emails_view.appendChild(emailDiv);
-    emailDiv.addEventListener('click', () => load_email_id(email.id))
+    emailDiv.addEventListener('click', () => load_email_id(email.id, mailbox))
 
   })
 }
@@ -89,15 +88,11 @@ async function load_mailbox(mailbox) {
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
   document.querySelector('#email-view-by-id').style.display = 'none';
-
-
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
-
   const emails = await get_emails(mailbox)
-  // console.log(emails)
-  render_emails(emails);
+  render_emails(emails, mailbox);
 }
 
 async function get_email_id(id) {
@@ -105,6 +100,7 @@ async function get_email_id(id) {
   const email = await response.json()
   return email
 }
+
 function mark_read(id) {
   fetch(`/emails/${id}`, {
     method: 'PUT',
@@ -113,7 +109,7 @@ function mark_read(id) {
     })
   })
 }
-function render_email_id(email) {
+function render_email_id(email, mailbox) {
   const email_view = document.querySelector('#email-view-by-id')
   email_view.innerHTML = ''
   const emailinfo = document.createElement('div')
@@ -134,31 +130,63 @@ function render_email_id(email) {
   const timestamp = document.createElement('h4');
   timestamp.className = 'timestamp';
   timestamp.textContent = `At : ${email.timestamp}`;
-
   emailinfo.appendChild(sender);
   emailinfo.appendChild(recipients);
   emailinfo.appendChild(subject);
   emailinfo.appendChild(timestamp);
   email_view.appendChild(emailinfo);
 
-
+  const reply = document.createElement('button');
+  reply.className = 'reply btn btn-sm btn-outline-primary'
+  reply.innerHTML = 'Reply'
+  email_view.appendChild(reply)
   email_view.appendChild(document.createElement('hr'));
 
   const email_body = document.createElement('div');
   email_body.className = 'email-body'
   email_body.textContent = email.body;
 
+  if (mailbox === 'inbox') {
+    const arch = document.createElement('button');
+    arch.className = 'archive btn btn-sm btn-outline-danger'
+    arch.innerHTML = 'Archive'
+    arch.addEventListener('click', () => {
+      fetch(`/emails/${email.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          archived: true
+        })
+      })
+      load_mailbox('inbox');
+    })
+    emailinfo.appendChild(arch)
+  }
+  else if (mailbox === 'archive') {
+    const unarch = document.createElement('button');
+    unarch.className = 'unarchive btn btn-sm btn-outline-secondary'
+    unarch.innerHTML = 'Unarchive'
+    unarch.addEventListener('click', () => {
+      fetch(`/emails/${email.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          archived: false
+        })
+      })
+      load_mailbox('inbox');
+    })
+    emailinfo.appendChild(unarch)
+
+  }
   email_view.appendChild(email_body);
 
 }
-async function load_email_id(id) {
+async function load_email_id(id, mailbox) {
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'none';
   document.querySelector('#email-view-by-id').style.display = 'block';
 
   const email = await get_email_id(id)
-  console.log(email)
-  render_email_id(email)
+  render_email_id(email, mailbox)
   mark_read(id)
 
 }
