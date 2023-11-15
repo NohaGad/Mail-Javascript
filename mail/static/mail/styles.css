@@ -43,3 +43,7 @@ textarea {
 .readEmail {
     background-color: #dadfdc;
 }
+
+button {
+    margin: 3px
+}

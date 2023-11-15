@@ -140,6 +140,7 @@ function render_email_id(email, mailbox) {
   reply.className = 'reply btn btn-sm btn-outline-primary'
   reply.innerHTML = 'Reply'
   email_view.appendChild(reply)
+  reply.addEventListener('click', () => reply_on_email(email))
   email_view.appendChild(document.createElement('hr'));
 
   const email_body = document.createElement('div');
@@ -189,4 +190,22 @@ async function load_email_id(id, mailbox) {
   render_email_id(email, mailbox)
   mark_read(id)
 
+}
+
+function reply_on_email(email) {
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'block';
+  document.querySelector('#email-view-by-id').style.display = 'none';
+
+  // Clear out composition fields
+  document.querySelector('#compose-recipients').value = email.sender;
+  const re = 'Re:'
+  if (email.subject.slice(0, 3) === re) {
+    document.querySelector('#compose-subject').value = email.subject;
+  }
+
+  else {
+    document.querySelector('#compose-subject').value = `Re: ${email.subject}`;
+  }
+  document.querySelector('#compose-body').value = `\n\n\n\n\n\n\n\nOn ${email.timestamp} ${email.sender} wrote: ${email.body}\n`;
 }
