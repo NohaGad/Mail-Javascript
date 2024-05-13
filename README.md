@@ -1,7 +1,6 @@
 # Mail Javascript
 
 ![JavaScript](https://img.shields.io/badge/JavaScript-Frontend-yellow)
-![Server-side API](https://img.shields.io/badge/Server--side%20API-Specify%20API%20Here-orange)
 
 Mail Javascript is a front-end email client that interacts with a server-side API to send and receive emails. It provides features such as sending emails, viewing mailboxes (Inbox, Sent, Archive), viewing email content, archiving/unarchiving emails, and replying to emails.
 
